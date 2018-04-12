@@ -1,0 +1,53 @@
+K 25
+svn:wc:ra_dav:version-url
+V 40
+/svn/makemymealapp/!svn/ver/1/MakeMyMeal
+END
+MakeMyMeal.iml
+K 25
+svn:wc:ra_dav:version-url
+V 55
+/svn/makemymealapp/!svn/ver/1/MakeMyMeal/MakeMyMeal.iml
+END
+.gitignore
+K 25
+svn:wc:ra_dav:version-url
+V 51
+/svn/makemymealapp/!svn/ver/1/MakeMyMeal/.gitignore
+END
+gradlew
+K 25
+svn:wc:ra_dav:version-url
+V 48
+/svn/makemymealapp/!svn/ver/1/MakeMyMeal/gradlew
+END
+local.properties
+K 25
+svn:wc:ra_dav:version-url
+V 57
+/svn/makemymealapp/!svn/ver/1/MakeMyMeal/local.properties
+END
+gradle.properties
+K 25
+svn:wc:ra_dav:version-url
+V 58
+/svn/makemymealapp/!svn/ver/1/MakeMyMeal/gradle.properties
+END
+gradlew.bat
+K 25
+svn:wc:ra_dav:version-url
+V 52
+/svn/makemymealapp/!svn/ver/1/MakeMyMeal/gradlew.bat
+END
+build.gradle
+K 25
+svn:wc:ra_dav:version-url
+V 53
+/svn/makemymealapp/!svn/ver/1/MakeMyMeal/build.gradle
+END
+settings.gradle
+K 25
+svn:wc:ra_dav:version-url
+V 56
+/svn/makemymealapp/!svn/ver/1/MakeMyMeal/settings.gradle
+END

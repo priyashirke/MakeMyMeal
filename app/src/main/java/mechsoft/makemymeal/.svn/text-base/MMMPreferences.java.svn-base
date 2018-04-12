@@ -1,0 +1,43 @@
+package mechsoft.makemymeal;
+
+import android.content.Context;
+import android.content.SharedPreferences;
+
+/**
+ * Created by priyanka on 10-03-2018.
+ */
+
+
+public class MMMPreferences {
+    Context context;
+    private static String mypreference = "MMMSharePreferences";
+    private static MMMPreferences mmmUtils;
+    private static SharedPreferences sharedpreferences;
+
+    private MMMPreferences(Context context) {
+        this.context = context;
+    }
+
+    public static MMMPreferences getInstance(Context context) {
+        if (mmmUtils == null) {
+            mmmUtils = new MMMPreferences(context);
+            sharedpreferences = context.getSharedPreferences(mypreference,
+                    Context.MODE_PRIVATE);
+        }
+        return mmmUtils;
+    }
+
+    public void savePreferences(String key, String value) {
+        SharedPreferences.Editor editor = sharedpreferences.edit();
+        editor.putString(key, value);
+        editor.commit();
+    }
+
+    public String loadPreferences(String key) {
+        String value = "";
+        if (sharedpreferences.contains(key)) {
+            value = sharedpreferences.getString(key, "");
+        }
+        return value;
+    }
+}

@@ -1,0 +1,17 @@
+<modify-entry
+   committed-rev="3"
+   last-author="priyanka"
+   name="AndroidManifest.xml"
+   committed-date="2018-03-07T17:28:21.960604Z"/>
+<modify-entry
+   checksum="fd291a8a3025b0939655e9f8685a6a41"
+   name="AndroidManifest.xml"/>
+<delete-changelist
+   name="AndroidManifest.xml"/>
+<committed
+   name="AndroidManifest.xml"
+   revision="3"/>
+<modify-wcprop
+   name="AndroidManifest.xml"
+   propname="svn:wc:ra_dav:version-url"
+   propval="/svn/makemymealapp/!svn/ver/3/MakeMyMeal/app/src/main/AndroidManifest.xml"/>
