@@ -11,6 +11,7 @@ import android.support.annotation.RequiresApi;
 import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.app.AppCompatActivity;
 import android.text.TextUtils;
+import android.util.Base64;
 import android.util.Log;
 import android.view.View;
 import android.view.ViewTreeObserver;
@@ -23,10 +24,20 @@ import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.widget.Toast;
 
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
+
+import javax.crypto.BadPaddingException;
+import javax.crypto.Cipher;
+import javax.crypto.IllegalBlockSizeException;
+import javax.crypto.NoSuchPaddingException;
+import javax.crypto.spec.SecretKeySpec;
+
 
 public class HomeActivity extends AppCompatActivity {
     private static final String DEMO_URL = "http://apps.programmerguru.com/examples/chennai.html";
-    WebView webView;
+    public static WebView webView;
+    public static boolean isAppLaunched;
     SwipeRefreshLayout mySwipeRefreshLayout;
     private ViewTreeObserver.OnScrollChangedListener mOnScrollChangedListener;
 
@@ -56,7 +67,24 @@ public class HomeActivity extends AppCompatActivity {
                     }
                 }
         );
-        checkUserLoginForLaunch();
+        /*isAppLaunched=true;
+        webView.setWebViewClient(new WebViewClient() {
+
+            public void onPageFinished(WebView view, String url) {
+                //checkUserLoginForLaunch(HomeActivity.this);
+                if(isAppLaunched) {
+                    checkUserLoginForLaunch(HomeActivity.this);
+                    isAppLaunched = false;
+                }
+            }
+        });*/
+
+       /* (new Handler()).postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                checkUserLoginForLaunch(HomeActivity.this);
+            }
+        }, 2000);*/
     }
 
     private void checkInternetAndLoadWebview(Bundle savedInstanceState) {
@@ -86,10 +114,27 @@ public class HomeActivity extends AppCompatActivity {
         webView.getSettings().setLoadWithOverviewMode(true);
         webView.getSettings().setUseWideViewPort(true);
         webView.setScrollBarStyle(WebView.SCROLLBARS_OUTSIDE_OVERLAY);
-        webView.loadUrl(MConstants.HOME_URL);
+        webView.loadUrl(getHomeURL());
         webView.setWebViewClient(new MyWebViewClient());
         webView.addJavascriptInterface(new WebAppInterface(this, webView), MConstants.JAVASCRIPT_OBJ);
         setAppFlag();
+    }
+
+    String getHomeURL() {
+        String homeURL = MConstants.HOME_URL;
+        MMMPreferences mmmPreferences = MMMPreferences.getInstance(this);
+        String username = mmmPreferences.loadPreferences(MConstants.KEY_USERNAME);
+        String password = mmmPreferences.loadPreferences(MConstants.KEY_PASSWORD);
+        if (!TextUtils.isEmpty(username) && !TextUtils.isEmpty(password)) {
+            TripleDES tripleDES = new TripleDES();
+            try {
+                homeURL = MConstants.HOME_URL + "/Home/logthroughand?usnam=" + tripleDES._encrypt(username) + "&uspas=" + tripleDES._encrypt(password);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+        Log.i("Final HomeURL=",homeURL);
+        return homeURL;
     }
 
     // Save the state of the web view when the screen is rotated.
@@ -125,7 +170,7 @@ public class HomeActivity extends AppCompatActivity {
                             mmmPreferences.savePreferences(MConstants.APP_JS_FLAG, true);
                             Log.i("setAppFlag", "true");
                         }
-                       // Toast.makeText(HomeActivity.this, s, Toast.LENGTH_SHORT).show();
+                        // Toast.makeText(HomeActivity.this, s, Toast.LENGTH_SHORT).show();
                     }
 
                 });
@@ -162,11 +207,11 @@ public class HomeActivity extends AppCompatActivity {
         }
     }
 
-    private void checkUserLoginForLaunch() {
-        Log.i("checkUserLoginForLaunch", "Authenticating user while launch");
-        MMMPreferences mmmPreferences = MMMPreferences.getInstance(this);
-        String username = mmmPreferences.loadPreferences(MConstants.KEY_USERNAME);
-        String password = mmmPreferences.loadPreferences(MConstants.KEY_PASSWORD);
+    public static void checkUserLoginForLaunch(Context con) {
+        Log.i("checkUserLoginForLaunch", "HomeActivity-Authenticating user while launch");
+        MMMPreferences mmmPreferences = MMMPreferences.getInstance(con);
+        final String username = mmmPreferences.loadPreferences(MConstants.KEY_USERNAME);
+        final String password = mmmPreferences.loadPreferences(MConstants.KEY_PASSWORD);
         if (!TextUtils.isEmpty(username) && !TextUtils.isEmpty(password)) {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
                 webView.evaluateJavascript("javascript: " +
@@ -181,7 +226,24 @@ public class HomeActivity extends AppCompatActivity {
                         "loginthroughandroidappForLaunch" +
                         "(\"" + username + "\",\"" + password + "\")}");
             }
-            Log.i("checkUserLoginForLaunch", "loginthroughandroidappForLaunch called");
+            /*webView.post(new Runnable() {
+                @Override
+                public void run() {
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
+                        webView.evaluateJavascript("javascript: " +
+                                "loginthroughandroidappForLaunch(\"" + username + "\",\"" + password + "\")", new ValueCallback<String>() {
+                            @Override
+                            public void onReceiveValue(String s) {
+                                // Do nothing
+                            }
+                        });
+                    } else {
+                        webView.loadUrl("javascript:{Android." +
+                                "loginthroughandroidappForLaunch" +
+                                "(\"" + username + "\",\"" + password + "\")}");
+                    }
+                }
+            });*/
         } else {
             Log.d("checkUserLoginForLaunch", "User not logged in or invalid credential");
         }
@@ -219,6 +281,7 @@ public class HomeActivity extends AppCompatActivity {
     @Override
     protected void onDestroy() {
         webView.removeJavascriptInterface(MConstants.JAVASCRIPT_OBJ);
+        isAppLaunched = false;
         super.onDestroy();
     }
 
@@ -240,4 +303,5 @@ public class HomeActivity extends AppCompatActivity {
         } else
             super.onBackPressed();
     }
+
 }

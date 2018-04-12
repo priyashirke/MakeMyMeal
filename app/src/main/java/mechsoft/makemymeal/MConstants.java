@@ -10,10 +10,10 @@ public class MConstants {
     public static final String JAVASCRIPT_OBJ="Android";
     public static final String APP_JS_FLAG="AppFlag";
     //For live
-    public static final String HOME_URL = "https://www.makemymeal.ae";
+    //public static final String HOME_URL = "https://www.makemymeal.ae";
 
     //For dev
-    //public static final String HOME_URL = "https://www.makemymeal.ae/makemymealdev";
+    public static final String HOME_URL = "https://www.makemymeal.ae/makemymealdev";
 
     //For Pre-UAT
     //public static final String HOME_URL = "https://www.makemymeal.ae/makemymealpreuat";

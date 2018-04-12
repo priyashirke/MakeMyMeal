@@ -20,56 +20,72 @@ public class WebAppInterface {
     Context mContext;
     WebView webView;
 
-    /** Instantiate the interface and set the context */
+    /**
+     * Instantiate the interface and set the context
+     */
     WebAppInterface(Context c, WebView webView) {
         mContext = c;
-        this.webView=webView;
+        this.webView = webView;
     }
 
-    /** To get username and password from interface */
+    /**
+     * To get username and password from interface
+     */
     @JavascriptInterface
-    public void showloginuser(String username,String password) {
-        Log.i("showloginuser", "username="+username+"password="+password);
-        MMMPreferences mmmPreferences=MMMPreferences.getInstance(mContext);
-        mmmPreferences.savePreferences(MConstants.KEY_USERNAME,username);
-        mmmPreferences.savePreferences(MConstants.KEY_PASSWORD,password);
-        Log.d("Login attempt","username="+username);
-    }
-
-    /** To share referral code */
-    @JavascriptInterface
-    public void SetReferflag(String flag) {
-        Log.i("SetReferflag", "flag="+flag);
+    public void showloginuser(String username, String password) {
+        Log.i("showloginuser", "username=" + username + "password=" + password);
         MMMPreferences mmmPreferences = MMMPreferences.getInstance(mContext);
-        String username = mmmPreferences.loadPreferences(MConstants.KEY_USERNAME);
-        if (!TextUtils.isEmpty(username)&&webView!=null) {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
-                webView.evaluateJavascript("javascript: " +"checkApkOrWeb(\"1\")", new ValueCallback<String>() {
-                    @Override
-                    public void onReceiveValue(String s) {
-                        if(s.equalsIgnoreCase("Success")){
-                            MMMPreferences mmmPreferences=MMMPreferences.getInstance(mContext);
-                            mmmPreferences.savePreferences(MConstants.APP_JS_FLAG,true);
-                        }
-                        Toast.makeText(mContext,s,Toast.LENGTH_SHORT).show();
-                    }
-
-                });
-            }
-            else {
-                webView.loadUrl("javascript:{Android.checkApkOrWeb("+flag+")}");
-            }
-        } else {
-            Log.i("checkUserLogin", "User not logged in or invalid credential");
-        }
+        mmmPreferences.savePreferences(MConstants.KEY_USERNAME, username);
+        mmmPreferences.savePreferences(MConstants.KEY_PASSWORD, password);
+        Log.d("Login attempt",
+                "username=" + username);
     }
 
-    /** To share referral code */
+    /**
+     * To share referral code
+     */
     @JavascriptInterface
-        public void StoreReferalbody(String rSubject ,String rBody) {
-        Log.i("StoreReferalbody", "rSubject="+rSubject+" rBody="+rBody);
-        MMMPreferences mmmPreferences=MMMPreferences.getInstance(mContext);
-        if(!TextUtils.isEmpty(mmmPreferences.loadPreferences(MConstants.KEY_USERNAME))){
+    public void CallApkloginmethod() {
+        //HomeActivity.checkUserLoginForLaunch(mContext);
+        //Log.i("CallApkloginmethod", "loginthroughandroidappForLaunch called");
+        Log.i("CallApkloginmethod", "Noflag=");
+        MMMPreferences mmmPreferences = MMMPreferences.getInstance(mContext);
+        final String username = mmmPreferences.loadPreferences(MConstants.KEY_USERNAME);
+        final String password = mmmPreferences.loadPreferences(MConstants.KEY_PASSWORD);
+
+       /* if (!TextUtils.isEmpty(username) && webView != null && HomeActivity.isAppLaunched) {
+            webView.post(new Runnable() {
+                @Override
+                public void run() {
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
+                        webView.evaluateJavascript("javascript: " +
+                                "loginthroughandroidappForLaunch(\"" + username + "\",\"" + password + "\")", new ValueCallback<String>() {
+                            @Override
+                            public void onReceiveValue(String s) {
+                                // Do nothing
+                            }
+                        });
+                    } else {
+                       webView.loadUrl("javascript:{Android." +
+                                "loginthroughandroidappForLaunch" +
+                                "(\"" + username + "\",\"" + password + "\")}");
+                    }
+                }
+            });
+            Log.i("CallApkloginmethod", "loginthroughandroidappForLaunch called");
+        } else {
+            Log.i("CallApkloginmethod", "User not logged in or invalid credential");
+        }*/
+    }
+
+    /**
+     * To share referral code
+     */
+    @JavascriptInterface
+    public void StoreReferalbody(String rSubject, String rBody) {
+        Log.i("StoreReferalbody", "rSubject=" + rSubject + " rBody=" + rBody);
+        MMMPreferences mmmPreferences = MMMPreferences.getInstance(mContext);
+        if (!TextUtils.isEmpty(mmmPreferences.loadPreferences(MConstants.KEY_USERNAME))) {
             Intent sendIntent = new Intent();
             sendIntent.setAction(Intent.ACTION_SEND);
             sendIntent.putExtra(Intent.EXTRA_TEXT, rBody);
@@ -81,9 +97,10 @@ public class WebAppInterface {
 
     /**
      * Show Dialog
+     *
      * @param dialogMsg
      */
-    public void showDialog(String dialogMsg){
+    public void showDialog(String dialogMsg) {
         AlertDialog alertDialog = new AlertDialog.Builder(mContext).create();
 
         // Setting Dialog Title
@@ -110,7 +127,7 @@ public class WebAppInterface {
     /**
      * Intent - Move to next screen
      */
-    public void moveToNextScreen(){
+    public void moveToNextScreen() {
         AlertDialog.Builder alertDialog = new AlertDialog.Builder(mContext);
         // Setting Dialog Title
         alertDialog.setTitle("Alert");
