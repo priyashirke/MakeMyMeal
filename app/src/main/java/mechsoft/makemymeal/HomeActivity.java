@@ -11,7 +11,6 @@ import android.support.annotation.RequiresApi;
 import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.app.AppCompatActivity;
 import android.text.TextUtils;
-import android.util.Base64;
 import android.util.Log;
 import android.view.View;
 import android.view.ViewTreeObserver;
@@ -24,15 +23,6 @@ import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.widget.Toast;
 
-import java.security.InvalidKeyException;
-import java.security.NoSuchAlgorithmException;
-
-import javax.crypto.BadPaddingException;
-import javax.crypto.Cipher;
-import javax.crypto.IllegalBlockSizeException;
-import javax.crypto.NoSuchPaddingException;
-import javax.crypto.spec.SecretKeySpec;
-
 
 public class HomeActivity extends AppCompatActivity {
     private static final String DEMO_URL = "http://apps.programmerguru.com/examples/chennai.html";
@@ -40,6 +30,30 @@ public class HomeActivity extends AppCompatActivity {
     public static boolean isAppLaunched;
     SwipeRefreshLayout mySwipeRefreshLayout;
     private ViewTreeObserver.OnScrollChangedListener mOnScrollChangedListener;
+
+    public static void checkUserLoginForLaunch(Context con) {
+        Log.i("checkUserLoginForLaunch", "HomeActivity-Authenticating user while launch");
+        MMMPreferences mmmPreferences = MMMPreferences.getInstance(con);
+        final String username = mmmPreferences.loadPreferences(MConstants.KEY_USERNAME);
+        final String password = mmmPreferences.loadPreferences(MConstants.KEY_PASSWORD);
+        if (!TextUtils.isEmpty(username) && !TextUtils.isEmpty(password)) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
+                webView.evaluateJavascript("javascript: " +
+                        "loginthroughandroidappForLaunch(\"" + username + "\",\"" + password + "\")", new ValueCallback<String>() {
+                    @Override
+                    public void onReceiveValue(String s) {
+                        // Do nothing
+                    }
+                });
+            } else {
+                webView.loadUrl("javascript:{Android." +
+                        "loginthroughandroidappForLaunch" +
+                        "(\"" + username + "\",\"" + password + "\")}");
+            }
+        } else {
+            Log.d("checkUserLoginForLaunch", "User not logged in or invalid credential");
+        }
+    }
 
     @SuppressLint("SetJavaScriptEnabled")
     @Override
@@ -126,14 +140,13 @@ public class HomeActivity extends AppCompatActivity {
         String username = mmmPreferences.loadPreferences(MConstants.KEY_USERNAME);
         String password = mmmPreferences.loadPreferences(MConstants.KEY_PASSWORD);
         if (!TextUtils.isEmpty(username) && !TextUtils.isEmpty(password)) {
-            TripleDES tripleDES = new TripleDES();
             try {
-                homeURL = MConstants.HOME_URL + "/Home/logthroughand?usnam=" + tripleDES._encrypt(username) + "&uspas=" + tripleDES._encrypt(password);
+                homeURL = MConstants.HOME_URL + "/Home/logthroughand?usnam=" + username + "&uspas=" + password;
             } catch (Exception e) {
                 e.printStackTrace();
             }
         }
-        Log.i("Final HomeURL=",homeURL);
+        Log.i("Final HomeURL=", homeURL);
         return homeURL;
     }
 
@@ -207,64 +220,6 @@ public class HomeActivity extends AppCompatActivity {
         }
     }
 
-    public static void checkUserLoginForLaunch(Context con) {
-        Log.i("checkUserLoginForLaunch", "HomeActivity-Authenticating user while launch");
-        MMMPreferences mmmPreferences = MMMPreferences.getInstance(con);
-        final String username = mmmPreferences.loadPreferences(MConstants.KEY_USERNAME);
-        final String password = mmmPreferences.loadPreferences(MConstants.KEY_PASSWORD);
-        if (!TextUtils.isEmpty(username) && !TextUtils.isEmpty(password)) {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
-                webView.evaluateJavascript("javascript: " +
-                        "loginthroughandroidappForLaunch(\"" + username + "\",\"" + password + "\")", new ValueCallback<String>() {
-                    @Override
-                    public void onReceiveValue(String s) {
-                        // Do nothing
-                    }
-                });
-            } else {
-                webView.loadUrl("javascript:{Android." +
-                        "loginthroughandroidappForLaunch" +
-                        "(\"" + username + "\",\"" + password + "\")}");
-            }
-            /*webView.post(new Runnable() {
-                @Override
-                public void run() {
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
-                        webView.evaluateJavascript("javascript: " +
-                                "loginthroughandroidappForLaunch(\"" + username + "\",\"" + password + "\")", new ValueCallback<String>() {
-                            @Override
-                            public void onReceiveValue(String s) {
-                                // Do nothing
-                            }
-                        });
-                    } else {
-                        webView.loadUrl("javascript:{Android." +
-                                "loginthroughandroidappForLaunch" +
-                                "(\"" + username + "\",\"" + password + "\")}");
-                    }
-                }
-            });*/
-        } else {
-            Log.d("checkUserLoginForLaunch", "User not logged in or invalid credential");
-        }
-    }
-
-    private class MyWebViewClient extends WebViewClient {
-
-        @RequiresApi(Build.VERSION_CODES.N)
-        @Override
-        public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
-            String url = request.getUrl().toString();
-            return urlLoading(view, url);
-        }
-
-        @SuppressWarnings("deprecation")
-        @Override
-        public boolean shouldOverrideUrlLoading(WebView view, String url) {
-            return urlLoading(view, url);
-        }
-    }
-
     @Override
     protected void onRestoreInstanceState(Bundle savedInstanceState) {
         super.onRestoreInstanceState(savedInstanceState);
@@ -302,6 +257,22 @@ public class HomeActivity extends AppCompatActivity {
                 finish();
         } else
             super.onBackPressed();
+    }
+
+    private class MyWebViewClient extends WebViewClient {
+
+        @RequiresApi(Build.VERSION_CODES.N)
+        @Override
+        public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
+            String url = request.getUrl().toString();
+            return urlLoading(view, url);
+        }
+
+        @SuppressWarnings("deprecation")
+        @Override
+        public boolean shouldOverrideUrlLoading(WebView view, String url) {
+            return urlLoading(view, url);
+        }
     }
 
 }

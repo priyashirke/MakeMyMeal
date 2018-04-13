@@ -46,12 +46,13 @@ public class WebAppInterface {
      */
     @JavascriptInterface
     public void CallApkloginmethod() {
+        //Do nothing
         //HomeActivity.checkUserLoginForLaunch(mContext);
         //Log.i("CallApkloginmethod", "loginthroughandroidappForLaunch called");
-        Log.i("CallApkloginmethod", "Noflag=");
+        /*Log.i("CallApkloginmethod", "Noflag=");
         MMMPreferences mmmPreferences = MMMPreferences.getInstance(mContext);
         final String username = mmmPreferences.loadPreferences(MConstants.KEY_USERNAME);
-        final String password = mmmPreferences.loadPreferences(MConstants.KEY_PASSWORD);
+        final String password = mmmPreferences.loadPreferences(MConstants.KEY_PASSWORD);*/
 
        /* if (!TextUtils.isEmpty(username) && webView != null && HomeActivity.isAppLaunched) {
             webView.post(new Runnable() {
