@@ -48,7 +48,7 @@ public class WebAppInterface {
     public void CallApkloginmethod() {
         //Do nothing
         //HomeActivity.checkUserLoginForLaunch(mContext);
-        //Log.i("CallApkloginmethod", "loginthroughandroidappForLaunch called");
+        Log.i("CallApkloginmethod", "loginthroughandroidappForLaunch called");
         /*Log.i("CallApkloginmethod", "Noflag=");
         MMMPreferences mmmPreferences = MMMPreferences.getInstance(mContext);
         final String username = mmmPreferences.loadPreferences(MConstants.KEY_USERNAME);
