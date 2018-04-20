@@ -19,6 +19,8 @@ import java.util.Locale;
  */
 
 public class Logger {
+
+    private static boolean printLog=false;
     /**
      * Sends an error message to LogCat and to a log file.
      * @param context The context of the application.
@@ -31,6 +33,9 @@ public class Logger {
        /* if (!Log.isLoggable(logMessageTag, Log.ERROR))
             return;*/
 
+       if(!printLog){
+           return;
+       }
         int logResult = Log.e(logMessageTag, logMessage);
         if (logResult > 0)
             logToFile(context, logMessageTag, logMessage);
@@ -47,6 +52,10 @@ public class Logger {
     public static void e
     (Context context, String logMessageTag, String logMessage, Throwable throwableException)
     {
+        if(!printLog){
+            return;
+        }
+
         if (!Log.isLoggable(logMessageTag, Log.ERROR))
             return;
 
@@ -73,6 +82,9 @@ public class Logger {
        /* if (!BuildConfig.DEBUG || !Log.isLoggable(logMessageTag, Log.VERBOSE))
             return;*/
 
+        if(!printLog){
+            return;
+        }
         int logResult = Log.v(logMessageTag, logMessage);
         if (logResult > 0)
             logToFile(context, logMessageTag, logMessage);
@@ -88,6 +100,10 @@ public class Logger {
     public static void v
     (Context context,String logMessageTag, String logMessage, Throwable throwableException)
     {
+        if(!printLog){
+            return;
+        }
+
         // If the build is not debug, do not try to log, the logcat be
         // stripped at compilation.
         if (!BuildConfig.DEBUG || !Log.isLoggable(logMessageTag, Log.VERBOSE))
