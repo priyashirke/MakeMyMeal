@@ -1,11 +1,13 @@
-package mechsoft.makemymeal;
+package mechsoft.makemymeal.View;
 
 import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.AlertDialog;
+import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.net.Uri;
@@ -14,6 +16,7 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.support.annotation.RequiresApi;
+import android.support.v4.content.LocalBroadcastManager;
 import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.app.AppCompatActivity;
 import android.text.TextUtils;
@@ -30,8 +33,19 @@ import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.widget.Toast;
 
+import com.google.firebase.messaging.FirebaseMessaging;
+
 import org.jsoup.Jsoup;
 import org.w3c.dom.Document;
+
+import mechsoft.makemymeal.API.APIController;
+import mechsoft.makemymeal.FCM.Config;
+import mechsoft.makemymeal.FCM.NotificationUtils;
+import mechsoft.makemymeal.R;
+import mechsoft.makemymeal.Util.MConstants;
+import mechsoft.makemymeal.Util.MMMPreferences;
+import mechsoft.makemymeal.Util.NetUtils;
+import mechsoft.makemymeal.WebInterface.WebAppInterface;
 
 
 public class HomeActivity extends AppCompatActivity {
@@ -41,6 +55,32 @@ public class HomeActivity extends AppCompatActivity {
     SwipeRefreshLayout mySwipeRefreshLayout;
     String homeURL = "";
     private ViewTreeObserver.OnScrollChangedListener mOnScrollChangedListener;
+    private BroadcastReceiver mRegistrationBroadcastReceiver;
+
+    public static void checkUserLoginForLaunch(Context con) {
+        Log.i("checkUserLoginForLaunch", "HomeActivity-Authenticating user while launch");
+        MMMPreferences mmmPreferences = MMMPreferences.getInstance(con);
+        final String username = mmmPreferences.loadPreferences(MConstants.KEY_USERNAME);
+        final String password = mmmPreferences.loadPreferences(MConstants.KEY_PASSWORD);
+        if (!TextUtils.isEmpty(username) && !TextUtils.isEmpty(password)) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
+                webView.evaluateJavascript("javascript: " +
+                        "loginthroughandroidappForLaunch(\"" + username + "\",\"" + password + "\")", new ValueCallback<String>() {
+                    @Override
+                    public void onReceiveValue(String s) {
+                        // Do nothing
+                    }
+                });
+            } else {
+                webView.loadUrl("javascript:{Android." +
+                        "loginthroughandroidappForLaunch" +
+                        "(\"" + username + "\",\"" + password + "\")}");
+            }
+        } else {
+            Log.d("checkUserLoginForLaunch", "User not logged in or invalid credential");
+        }
+
+    }
 
     @SuppressLint("SetJavaScriptEnabled")
     @Override
@@ -55,6 +95,7 @@ public class HomeActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
         webView = (WebView) findViewById(R.id.webview);
         webView.setVisibility(View.GONE);
+        FCMInit();
         checkInternetAndLoadWebview(savedInstanceState);
         mySwipeRefreshLayout = (SwipeRefreshLayout) this.findViewById(R.id.swiperefresh);
         mySwipeRefreshLayout.getViewTreeObserver().removeOnScrollChangedListener(mOnScrollChangedListener);
@@ -72,6 +113,66 @@ public class HomeActivity extends AppCompatActivity {
                     }
                 }
         );
+
+        mRegistrationBroadcastReceiver = new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                // checking for type intent filter
+                if (intent.getAction().equals(Config.REGISTRATION_COMPLETE)) {
+                    // gcm successfully registered
+                    // now subscribe to `all_user`,'anony' topic to receive app wide notifications
+
+
+                } else if (intent.getAction().equals(Config.PUSH_NOTIFICATION)) {
+                    // new push notification is received
+                    String message = intent.getStringExtra("message");
+                    Toast.makeText(getApplicationContext(), "Push notification: " + message, Toast.LENGTH_LONG).show();
+                }
+            }
+        };
+    }
+
+    private void FCMInit() {
+        sendFCMToken();
+        registerTopics();
+    }
+
+    private void registerTopics() {
+        MMMPreferences mmmPreferences = MMMPreferences.getInstance(HomeActivity.this);
+        if(FirebaseMessaging.getInstance()!=null) {
+            if (TextUtils.isEmpty(mmmPreferences.loadPreferences(MConstants.KEY_USERNAME))) {
+                FirebaseMessaging.getInstance().subscribeToTopic(Config.TOPIC_ANONYMOUS_USERS);
+                Log.i("Topic subscribed : ",Config.TOPIC_ANONYMOUS_USERS);
+                FirebaseMessaging.getInstance().unsubscribeFromTopic(Config.TOPIC_LOGGED_USERS);
+                Log.i("Topic un-subscribed : ",Config.TOPIC_LOGGED_USERS);
+            } else {
+                FirebaseMessaging.getInstance().subscribeToTopic(Config.TOPIC_LOGGED_USERS);
+                Log.i("Topic subscribed : ",Config.TOPIC_LOGGED_USERS);
+                FirebaseMessaging.getInstance().unsubscribeFromTopic(Config.TOPIC_ANONYMOUS_USERS);
+                Log.i("Topic un-subscribed : ",Config.TOPIC_ANONYMOUS_USERS);
+            }
+        }
+    }
+
+    private void sendFCMToken() {
+        MMMPreferences mmmPreferences = MMMPreferences.getInstance(this);
+        String token = mmmPreferences.loadPreferences(MConstants.TOKEN);
+        if (!TextUtils.isEmpty(token)) {
+            String username = mmmPreferences.loadPreferences(MConstants.KEY_USERNAME);
+            /**
+             * send FCM token only if
+             * 1. token is generated
+             * 2. Anonymous sent flag is false or
+             * 3. Logged in sent flag is false
+             */
+            if (!mmmPreferences.loadBoolPreferences(MConstants.ANM_TOKEN_SENT)
+                    || !mmmPreferences.loadBoolPreferences(MConstants.LGN_TOKEN_SENT)) {
+
+                APIController apiController = new APIController();
+                apiController.notifyToken(token);
+                Log.i("FCM Token", "Token sent " + token + " for login id=" + username);
+            }
+        }
     }
 
     // Save the state of the web view when the screen is rotated.
@@ -96,6 +197,27 @@ public class HomeActivity extends AppCompatActivity {
         //Logger.v(this, "onResume", "Calling checkUserLogin and setAppFlag");
         checkUserLogin();
         setAppFlag();
+        //initNotification();
+    }
+
+    @Override
+    protected void onPause() {
+        LocalBroadcastManager.getInstance(this).unregisterReceiver(mRegistrationBroadcastReceiver);
+        super.onPause();
+    }
+
+    private void initNotification() {
+        // register GCM registration complete receiver
+        LocalBroadcastManager.getInstance(this).registerReceiver(mRegistrationBroadcastReceiver,
+                new IntentFilter(Config.REGISTRATION_COMPLETE));
+
+        // register new push message receiver
+        // by doing this, the activity will be notified each time a new message arrives
+        LocalBroadcastManager.getInstance(this).registerReceiver(mRegistrationBroadcastReceiver,
+                new IntentFilter(Config.PUSH_NOTIFICATION));
+
+        // clear the notification area when the app is opened
+        //NotificationUtils.clearNotifications(getApplicationContext());
     }
 
     @Override
@@ -129,7 +251,7 @@ public class HomeActivity extends AppCompatActivity {
             super.onBackPressed();
     }
 
-    private void initWebview() {
+    private void initWebview(String url) {
         webView = (WebView) findViewById(R.id.webview);
         webView.getSettings().setJavaScriptEnabled(true);
         webView.getSettings().setBuiltInZoomControls(false);
@@ -137,7 +259,11 @@ public class HomeActivity extends AppCompatActivity {
         webView.getSettings().setLoadWithOverviewMode(true);
         webView.getSettings().setUseWideViewPort(true);
         webView.setScrollBarStyle(WebView.SCROLLBARS_OUTSIDE_OVERLAY);
-        webView.loadUrl(getHomeURL());
+        if (!TextUtils.isEmpty(url)) {
+            webView.loadUrl(url);
+        } else {
+            webView.loadUrl(getHomeURL());
+        }
         webView.setWebViewClient(new MyWebViewClient());
         webView.addJavascriptInterface(new WebAppInterface(this, webView), MConstants.JAVASCRIPT_OBJ);
         setAppFlag();
@@ -150,18 +276,37 @@ public class HomeActivity extends AppCompatActivity {
         } else {
             //webView.setVisibility(View.VISIBLE);
             // Reload the old WebView content
-            if (savedInstanceState != null) {
-                webView.restoreState(savedInstanceState);
-                //Logger.v(this, "LoadWebview", "restoreState of webview");
-                Log.i("onCreate", "savedInstanceState is not Null");
-            }
-            // Create the WebView
-            else {
-                Log.i("onCreate", "savedInstanceState is Null");
-               // Logger.v(this, "E&LoadWebview", "Initiating webview");
-                initWebview();
+            if (getIntent().hasExtra("navURL")) {
+                initWebview(getNavURL());
+                getIntent().removeExtra("navURL");
+                if (getIntent().hasExtra("notificationId")) {
+                    NotificationUtils.clearNotification(this,getIntent().getIntExtra("notificationId",0));
+                }else{
+                    NotificationUtils.clearNotifications(this);
+                }
+            } else {
+                if (savedInstanceState != null) {
+                    webView.restoreState(savedInstanceState);
+                    //Logger.v(this, "LoadWebview", "restoreState of webview");
+                    Log.i("onCreate", "savedInstanceState is not Null");
+                }
+                // Create the WebView
+                else {
+                    Log.i("onCreate", "savedInstanceState is Null");
+                    // Logger.v(this, "E&LoadWebview", "Initiating webview");
+                    initWebview(getHomeURL());
+                }
             }
         }
+    }
+
+    private String getNavURL() {
+        MMMPreferences mmmPreferences = MMMPreferences.getInstance(this);
+        String username = mmmPreferences.loadPreferences(MConstants.KEY_USERNAME);
+        String password = mmmPreferences.loadPreferences(MConstants.KEY_PASSWORD);
+        String rawUrl = getIntent().getExtras().getString("navURL");
+        rawUrl = rawUrl.replace(MConstants.NAV_URL_USERNAME, username).replace(MConstants.NAV_URL_PASSWORD, password);
+        return rawUrl;
     }
 
     private void reloadWebView() {
@@ -171,7 +316,6 @@ public class HomeActivity extends AppCompatActivity {
         } else {
             webView.reload();
         }
-
     }
 
     private void hideWeb() {
@@ -388,7 +532,7 @@ public class HomeActivity extends AppCompatActivity {
                     //         .userAgent("Mozilla/5.0 (Windows; U; WindowsNT 5.1; en-US; rv1.8.1.6) Gecko/20070725 Firefox/2.0.0.6")
                     //       .referrer("https://www.makemymeal.ae")
                     //     .get();
-                    switch (newVersion = Jsoup.connect("https://www.makemymeal.ae/makemymealdev/home/logthroughand")
+                    switch (newVersion = Jsoup.connect("https://www.makemymeal.ae/Home/logthroughand")
                             .timeout(30000)
                             .userAgent("Mozilla/5.0 (Windows; U; WindowsNT 5.1; en-US; rv1.8.1.6) Gecko/20070725 Firefox/2.0.0.6")
                             .referrer("https://www.makemymeal.ae")
@@ -412,7 +556,7 @@ public class HomeActivity extends AppCompatActivity {
                         String currentVersion = act.getPackageManager().getPackageInfo(act.getPackageName(), 0).versionName;
                         // Log.d("update", "Current version " + currentVersion + "playstore version " + onlineVersion);
                         //if (Float.valueOf(currentVersion) < Float.valueOf(onlineVersion)) {
-//show dialog
+                        //show dialog
                         //   Log.d("update", "LaunchDailog");
                         if (!currentVersion.equals(onlineVersion)) {
                             //CallOnCreate();
@@ -426,31 +570,6 @@ public class HomeActivity extends AppCompatActivity {
 
             }
         }
-    }
-
-    public static void checkUserLoginForLaunch(Context con) {
-        Log.i("checkUserLoginForLaunch", "HomeActivity-Authenticating user while launch");
-        MMMPreferences mmmPreferences = MMMPreferences.getInstance(con);
-        final String username = mmmPreferences.loadPreferences(MConstants.KEY_USERNAME);
-        final String password = mmmPreferences.loadPreferences(MConstants.KEY_PASSWORD);
-        if (!TextUtils.isEmpty(username) && !TextUtils.isEmpty(password)) {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
-                webView.evaluateJavascript("javascript: " +
-                        "loginthroughandroidappForLaunch(\"" + username + "\",\"" + password + "\")", new ValueCallback<String>() {
-                    @Override
-                    public void onReceiveValue(String s) {
-                        // Do nothing
-                    }
-                });
-            } else {
-                webView.loadUrl("javascript:{Android." +
-                        "loginthroughandroidappForLaunch" +
-                        "(\"" + username + "\",\"" + password + "\")}");
-            }
-        } else {
-            Log.d("checkUserLoginForLaunch", "User not logged in or invalid credential");
-        }
-
     }
 
 }

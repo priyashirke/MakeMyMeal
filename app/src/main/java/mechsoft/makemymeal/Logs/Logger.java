@@ -1,4 +1,4 @@
-package mechsoft.makemymeal;
+package mechsoft.makemymeal.Logs;
 
 import android.content.Context;
 import android.media.MediaScannerConnection;
@@ -13,6 +13,8 @@ import java.text.DateFormat;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.Locale;
+
+import mechsoft.makemymeal.BuildConfig;
 
 /**
  * Created by priyanka.shirke on 18/04/18.

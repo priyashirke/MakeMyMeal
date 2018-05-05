@@ -1,16 +1,21 @@
-package mechsoft.makemymeal;
+package mechsoft.makemymeal.WebInterface;
 
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
-import android.os.Build;
 import android.support.v7.app.AlertDialog;
 import android.text.TextUtils;
 import android.util.Log;
 import android.webkit.JavascriptInterface;
-import android.webkit.ValueCallback;
 import android.webkit.WebView;
 import android.widget.Toast;
+
+import com.google.firebase.messaging.FirebaseMessaging;
+
+import mechsoft.makemymeal.API.APIController;
+import mechsoft.makemymeal.FCM.Config;
+import mechsoft.makemymeal.Util.MConstants;
+import mechsoft.makemymeal.Util.MMMPreferences;
 
 /**
  * Created by admin2 on 24/2/18.
@@ -23,7 +28,7 @@ public class WebAppInterface {
     /**
      * Instantiate the interface and set the context
      */
-    WebAppInterface(Context c, WebView webView) {
+    public WebAppInterface(Context c, WebView webView) {
         mContext = c;
         this.webView = webView;
     }
@@ -35,10 +40,32 @@ public class WebAppInterface {
     public void showloginuser(String username, String password) {
         Log.i("showloginuser", "username=" + username + "password=" + password);
         MMMPreferences mmmPreferences = MMMPreferences.getInstance(mContext);
+        String loggedOutUser=mmmPreferences.loadPreferences(MConstants.KEY_USERNAME);
         mmmPreferences.savePreferences(MConstants.KEY_USERNAME, username);
         mmmPreferences.savePreferences(MConstants.KEY_PASSWORD, password);
         Log.d("Login attempt",
                 "username=" + username);
+
+        /**
+         * Updated FCM token when user logged out and logged in
+         */
+        String token =mmmPreferences.loadPreferences(MConstants.TOKEN);
+        if(TextUtils.isEmpty(username)) { // existing user is logged out
+            APIController apiController = new APIController();
+            apiController.notifyToken(token);
+            mmmPreferences.savePreferences(MConstants.LGN_TOKEN_SENT,false);
+            Log.i("FCM Token", "Token sent blank for login id=" + loggedOutUser);
+            FirebaseMessaging.getInstance().subscribeToTopic(Config.TOPIC_ANONYMOUS_USERS);
+            FirebaseMessaging.getInstance().unsubscribeFromTopic(Config.TOPIC_LOGGED_USERS);
+        }else{ //user is logged in
+            if (!mmmPreferences.loadBoolPreferences(MConstants.LGN_TOKEN_SENT)) {
+                APIController apiController = new APIController();
+                apiController.notifyToken(token);
+                Log.i("FCM Token", "Token sent " + token + " for login id=" + username);
+                FirebaseMessaging.getInstance().subscribeToTopic(Config.TOPIC_LOGGED_USERS);
+                FirebaseMessaging.getInstance().unsubscribeFromTopic(Config.TOPIC_ANONYMOUS_USERS);
+            }
+        }
     }
 
     /**

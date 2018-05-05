@@ -1,4 +1,4 @@
-package mechsoft.makemymeal;
+package mechsoft.makemymeal.Util;
 
 import android.content.Context;
 import android.content.SharedPreferences;
@@ -54,7 +54,7 @@ public class MMMPreferences {
     public Boolean loadBoolPreferences(String key) {
         if (sharedpreferences.contains(key)) {
             Log.i("loadBoolPreferences", "key"+key);
-            return Boolean.valueOf(sharedpreferences.getString(key, "false"));
+            return sharedpreferences.getBoolean(key, false);
         }
         return false;
     }

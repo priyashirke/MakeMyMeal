@@ -1,0 +1,42 @@
+{
+  "project_info": {
+    "project_number": "264121996721",
+    "firebase_url": "https://makemymeal-8529b.firebaseio.com",
+    "project_id": "makemymeal-8529b",
+    "storage_bucket": "makemymeal-8529b.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:264121996721:android:2d3a475a6abfbc57",
+        "android_client_info": {
+          "package_name": "mechsoft.makemymeal"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "264121996721-b8ko9bj3sfid2mqoe409n71f0v5ugr5u.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCOXJX2pKlfdZEVangqden9khsJnS6IztM"
+        }
+      ],
+      "services": {
+        "analytics_service": {
+          "status": 1
+        },
+        "appinvite_service": {
+          "status": 1,
+          "other_platform_oauth_client": []
+        },
+        "ads_service": {
+          "status": 2
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
