@@ -38,6 +38,10 @@ import com.google.firebase.messaging.FirebaseMessaging;
 import org.jsoup.Jsoup;
 import org.w3c.dom.Document;
 
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.TimeZone;
+
 import mechsoft.makemymeal.API.APIController;
 import mechsoft.makemymeal.FCM.Config;
 import mechsoft.makemymeal.FCM.NotificationUtils;
@@ -46,6 +50,8 @@ import mechsoft.makemymeal.Util.MConstants;
 import mechsoft.makemymeal.Util.MMMPreferences;
 import mechsoft.makemymeal.Util.NetUtils;
 import mechsoft.makemymeal.WebInterface.WebAppInterface;
+
+import static mechsoft.makemymeal.FCM.MyFirebaseMessagingService.isNotificationExpired2;
 
 
 public class HomeActivity extends AppCompatActivity {
@@ -130,6 +136,15 @@ public class HomeActivity extends AppCompatActivity {
                 }
             }
         };
+       // testNotification();
+
+    }
+
+    private void testNotification() {
+        String fromDate="2018-05-10 12:10:10";
+        String toDate="2018-05-11 12:10:10";
+        Boolean res=isNotificationExpired2(fromDate,toDate);
+        Log.i("Expired? => ",res?"Yes":"No");
     }
 
     private void FCMInit() {

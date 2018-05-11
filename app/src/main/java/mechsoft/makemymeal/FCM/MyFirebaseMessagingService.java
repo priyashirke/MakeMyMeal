@@ -6,16 +6,20 @@ import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
 import android.support.v4.app.NotificationCompat;
+import android.text.TextUtils;
 import android.util.Log;
 
 import com.google.firebase.messaging.FirebaseMessagingService;
 import com.google.firebase.messaging.RemoteMessage;
 
-import org.json.JSONException;
 import org.json.JSONObject;
 
-import mechsoft.makemymeal.View.HomeActivity;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.TimeZone;
+
 import mechsoft.makemymeal.R;
+import mechsoft.makemymeal.View.HomeActivity;
 
 /**
  * Created by priyanka.shirke on 30/04/18.
@@ -26,6 +30,45 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
 
     private NotificationUtils notificationUtils;
     private NotificationManager mNotificationManager;
+
+    public static boolean isNotificationExpired2(String startDate, String endDate) {
+        Date startD = getFormattedDate(startDate);
+        Date endD = getFormattedDate(endDate);
+        Date currentD = getFormattedCurrentDate();
+        if (startD != null && endD != null) {
+            if (currentD.after(startD) && currentD.before(endD)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private static Date getFormattedCurrentDate() {
+        Date result = null;
+        try {
+            SimpleDateFormat destFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+            SimpleDateFormat destFormat2 = destFormat;
+            TimeZone tz = TimeZone.getTimeZone("Asia/Dubai");
+            destFormat.setTimeZone(tz);
+            String UAETime = destFormat.format(new Date());
+            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+            result = sdf.parse(UAETime);
+        } catch (Exception e) {
+            Log.e("Notification", "Invalid date format");
+        }
+        return result;
+    }
+
+    private static Date getFormattedDate(String OurDate) {
+        Date result = null;
+        try {
+            SimpleDateFormat destFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+            result = destFormat.parse(OurDate);
+        } catch (Exception e) {
+            Log.e("Notification", "Invalid date format");
+        }
+        return result;
+    }
 
     @Override
     public void onMessageReceived(RemoteMessage remoteMessage) {
@@ -48,12 +91,14 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
         String title = "";
         String body = "";
         String icon = "";
-
+        int isexpir = 0;
+        String fromDate = "";
+        String toDate = "";
+        boolean notify;
 
         // Check if message contains a data payload.
         if (remoteMessage.getData().size() > 0) {
             Log.e(TAG, "Data Payload: " + remoteMessage.getData().toString());
-
             try {
                 JSONObject json = new JSONObject(remoteMessage.getData().toString());
                 if (json.has("navigation_url"))
@@ -64,17 +109,32 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
                     body = json.getString("body");
                 if (json.has("icon"))
                     icon = json.getString("icon");
+                if (json.has("isexpir"))
+                    isexpir = json.getInt("isexpir");
+                if (json.has("fromdatetime"))
+                    fromDate = json.getString("fromdatetime");
+                if (json.has("todatetime"))
+                    toDate = json.getString("todatetime");
             } catch (Exception e) {
                 Log.e(TAG, "Exception: " + e.getMessage());
             }
         }
 
+        if (isexpir == 1) {
+            if (!TextUtils.isEmpty(fromDate) && !TextUtils.isEmpty(toDate)) {
+                if (isNotificationExpired2(fromDate, toDate)) {
+                    Log.i("Notification", "Notification is expired");
+                    return;
+                }
+            }
+        }
+
         mNotificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
-        int notificationId = (int)System.currentTimeMillis();
+        int notificationId = (int) System.currentTimeMillis();
 
         Intent intent = new Intent(getApplicationContext(), HomeActivity.class); // Here pass your activity where you want to redirect.
         intent.putExtra("navURL", navURL);
-        intent.putExtra("notificationId",notificationId);
+        intent.putExtra("notificationId", notificationId);
         intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
         //showNotificationMessage(getApplicationContext(),this.getResources().getString(R.string.app_name),message,"",intent);
 
@@ -93,6 +153,7 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
                 .setContentText(body)
                 .setAutoCancel(true)
                 .setPriority(Notification.PRIORITY_HIGH)
+                //.setTimeoutAfter((long)ttl)
                 .setDefaults(Notification.FLAG_AUTO_CANCEL | Notification.DEFAULT_LIGHTS | Notification.DEFAULT_VIBRATE | Notification.DEFAULT_SOUND)
                 .setContentIntent(contentIntent);
         mNotificationManager.notify((int) notificationId, notificationBuilder.build());
@@ -114,6 +175,24 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
                 Log.e(TAG, "Exception: " + e.getMessage());
             }
         }*/
+    }
+
+    private boolean isNotificationExpired(String startDate, String endDate) {
+        Date startD = getFormattedDate(startDate);
+        Date endD = getFormattedDate(endDate);
+        Date currentD = getFormattedCurrentDate();
+        if (startD != null && endD != null) {
+            if (currentD.after(startD)) {
+                if ((currentD.before(endD))) {
+                    return true;
+                } else {
+                    return false;
+                }
+            } else {
+                return false;
+            }
+        }
+        return true;
     }
 
     private void handleNotification(String message) {
@@ -160,8 +239,6 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
                 .setDefaults(Notification.FLAG_AUTO_CANCEL | Notification.DEFAULT_LIGHTS | Notification.DEFAULT_VIBRATE | Notification.DEFAULT_SOUND)
                 .setContentIntent(contentIntent);
         mNotificationManager.notify((int) notificatioId, notificationBuilder.build());
-
-
     }
 
     /**

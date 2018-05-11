@@ -2,6 +2,7 @@ package mechsoft.makemymeal;
 
 import android.app.Application;
 
+import com.google.firebase.FirebaseApp;
 import com.google.firebase.messaging.FirebaseMessaging;
 
 import mechsoft.makemymeal.FCM.Config;
