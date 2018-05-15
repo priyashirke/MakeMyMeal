@@ -122,7 +122,7 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
 
         if (isexpir == 1) {
             if (!TextUtils.isEmpty(fromDate) && !TextUtils.isEmpty(toDate)) {
-                if (isNotificationExpired2(fromDate, toDate)) {
+                if (isNotificationExpired(fromDate, toDate)) {
                     Log.i("Notification", "Notification is expired");
                     return;
                 }
@@ -182,17 +182,13 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
         Date endD = getFormattedDate(endDate);
         Date currentD = getFormattedCurrentDate();
         if (startD != null && endD != null) {
-            if (currentD.after(startD)) {
-                if ((currentD.before(endD))) {
-                    return true;
-                } else {
-                    return false;
-                }
-            } else {
+            if (currentD.after(startD) && (currentD.before(endD))) {
                 return false;
+            } else {
+                return true;
             }
         }
-        return true;
+        return false;
     }
 
     private void handleNotification(String message) {
